@@ -33,10 +33,9 @@ def app():
 def display_form1():
     st.session_state["current_form"] = 1
     form1 = st.form("intro")
-    form1.subheader('About the Classifier')
+    form1.subheader('About the Support Vector Machine - Kernel Functions')
     form1.write("""
-        (c) 2024 Louie F. Cervantes
-        Department of Computer Science
+        (c) Cherry Mirra Calisnao  BSCS 3A
         College of Information and Communications Technology
         West Visayas state University
     """)
@@ -73,20 +72,23 @@ def display_form2():
     submit2 = form2.form_submit_button("Train")
     if submit2:     
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=3)
-        clfSVM = svm.SVC(kernel='rbf', C=1000, gamma=1.0)
-        clfSVM.fit(X_train, y_train)
-        y_test_pred = clfSVM.predict(X_test)
+       X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=3)
 
-        form2.subheader('Confusion Matrix')
-        form2.write('Confusion Matrix')
-        cm = confusion_matrix(y_test, y_test_pred)
-        form2.text(cm)
-        form2.subheader('Performance Metrics')
-        form2.text(classification_report(y_test, y_test_pred))
-        form2.subheader('VIsualization')
+           # Train models with different kernels
+           kernels = ['linear', 'poly', 'rbf']
+           for kernel in kernels:
+               st.subheader(f"Results for kernel: {kernel}")
+               clfSVM = svm.SVC(kernel=kernel, C=1000, gamma=1.0)  # Adjust hyperparameters as needed
+               clfSVM.fit(X_train, y_train)
+               y_test_pred = clfSVM.predict(X_test)
 
-        visualize_classifier(clfSVM, X_test, y_test_pred)
+               form2.subheader('Confusion Matrix')
+               cm = confusion_matrix(y_test, y_test_pred)
+               form2.text(cm)
+               form2.subheader('Performance Metrics')
+               form2.text(classification_report(y_test, y_test_pred))
+               form2.subheader('Visualization')
+               visualize_classifier(clfSVM, X_test, y_test_pred, title=f"SVM with Kernel: {kernel}")
 
         display_form3()
 
