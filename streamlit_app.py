@@ -74,21 +74,21 @@ def display_form2():
 
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=3)
 
-           # Train models with different kernels
-           kernels = ['linear', 'poly', 'rbf']
-           for kernel in kernels:
-               st.subheader(f"Results for kernel: {kernel}")
-               clfSVM = svm.SVC(kernel=kernel, C=1000, gamma=1.0)  # Adjust hyperparameters as needed
-               clfSVM.fit(X_train, y_train)
-               y_test_pred = clfSVM.predict(X_test)
+       # Train models with different kernels
+       kernels = ['linear', 'poly', 'rbf']
+       for kernel in kernels:
+       st.subheader(f"Results for kernel: {kernel}")
+       clfSVM = svm.SVC(kernel=kernel, C=1000, gamma=1.0)  # Adjust hyperparameters as needed
+       clfSVM.fit(X_train, y_train)
+        y_test_pred = clfSVM.predict(X_test)
 
-               form2.subheader('Confusion Matrix')
-               cm = confusion_matrix(y_test, y_test_pred)
-               form2.text(cm)
-               form2.subheader('Performance Metrics')
-               form2.text(classification_report(y_test, y_test_pred))
-               form2.subheader('Visualization')
-               visualize_classifier(clfSVM, X_test, y_test_pred, title=f"SVM with Kernel: {kernel}")
+        form2.subheader('Confusion Matrix')
+        cm = confusion_matrix(y_test, y_test_pred)
+        form2.text(cm)
+        form2.subheader('Performance Metrics')
+        form2.text(classification_report(y_test, y_test_pred))
+        form2.subheader('Visualization')
+        visualize_classifier(clfSVM, X_test, y_test_pred, title=f"SVM with Kernel: {kernel}")
 
         display_form3()
 
