@@ -80,17 +80,17 @@ def display_form2():
        st.subheader(f"Results for kernel: {kernel}")
        clfSVM = svm.SVC(kernel=kernel, C=1000, gamma=1.0)  # Adjust hyperparameters as needed
        clfSVM.fit(X_train, y_train)
-        y_test_pred = clfSVM.predict(X_test)
+       y_test_pred = clfSVM.predict(X_test)
 
-        form2.subheader('Confusion Matrix')
-        cm = confusion_matrix(y_test, y_test_pred)
-        form2.text(cm)
-        form2.subheader('Performance Metrics')
-        form2.text(classification_report(y_test, y_test_pred))
-        form2.subheader('Visualization')
-        visualize_classifier(clfSVM, X_test, y_test_pred, title=f"SVM with Kernel: {kernel}")
+       form2.subheader('Confusion Matrix')
+       cm = confusion_matrix(y_test, y_test_pred)
+       form2.text(cm)
+       form2.subheader('Performance Metrics')
+       form2.text(classification_report(y_test, y_test_pred))
+       form2.subheader('Visualization')
+       visualize_classifier(clfSVM, X_test, y_test_pred, title=f"SVM with Kernel: {kernel}")
 
-        display_form3()
+       display_form3()
 
 def display_form3():
     st.session_state["current_form"] = 3
