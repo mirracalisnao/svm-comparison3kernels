@@ -1,104 +1,205 @@
-# Input the relevant libraries
+import streamlit as st
 import numpy as np
 import pandas as pd
-import streamlit as st
 import matplotlib.pyplot as plt
-from sklearn import svm
-from sklearn.datasets import make_blobs
-from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns; sns.set()
+from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
 
 # Define the Streamlit app
 def app():
+    if "reset_app" not in st.session_state:
+        st.session_state.reset_app = False
 
-    st.title('Support Vector Machine with Different Kernels')
-    st.subheader('by Louie F. Cervantes M.Eng., WVSU College of ICT')
- 
-    st.write('Linear Kernel:')
-    text = """Strengths: \nHandles high dimensions, maximizes separation, 
-    efficient memory use, and offers some non-linearity through kernels."""
-    st.write(text)
-    text = """Weaknesses: \nComputationally demanding, can be difficult to interpret, 
-    and requires careful parameter tuning."""
-    st.write(text)
+    st.title('Comparison of SVM Kernels')
 
-    st.write('Polynomial Kernel')
-    text = """Strengths: \nCan capture complex relationships between features and classes, 
-    even when they are non-linear."""
-    st.write(text)
+    # Use session state to track the current form
+    if "current_form" not in st.session_state:
+        st.session_state["current_form"] = 1    
 
-    text = """Weaknesses:\nCan overfit the training data when dealing with high dimensionality 
-    or small datasets."""
-    st.write(text)
+    # Display the appropriate form based on the current form state
+    if st.session_state["current_form"] == 1:
+        display_form1()
+    elif st.session_state["current_form"] == 2:
+        display_form2()
+    elif st.session_state["current_form"] == 3:
+        display_form3()
 
-    st.write('RBF Kernel')
-    st.write("""Strong in complex, high-dimensional spaces, but computationally expensive.""")
+    if "form2" not in st.session_state: 
+        st.session_state["form2"] = []
+
+    if "clf" not in st.session_state: 
+        st.session_state["clf"] = []
+
+    if "X_test" not in st.session_state: 
+        st.session_state["X_Test"] = []
     
-    # Create a slider with a label and initial value
-    n_samples = st.slider(
-        label="Number of samples (200 to 4000):",
-        min_value=200,
-        max_value=4000,
-        step=200,
-        value=1000,  # Initial value
-    )
+    if "y_test_pred" not in st.session_state: 
+        st.session_state["y_test_pred"] = []
 
-    cluster_std = st.number_input("Standard deviation (between 0 and 1):")
+    if "selected_kernel" not in st.session_state: 
+        st.session_state["selected_kernel"] = []
 
-    random_state = st.slider(
-        label="Random seed (between 0 and 100):",
-        min_value=0,
-        max_value=100,
-        value=42,  # Initial value
-    )
-   
-    n_clusters = st.slider(
-        label="Number of Clusters:",
-        min_value=2,
-        max_value=6,
-        value=2,  # Initial value
-    )
+def display_form1():
+    st.session_state["current_form"] = 1
+    form1 = st.form("intro")
 
-    if st.button('Start'):
+    text = """Louie F. Cervantes, M. Eng. (Information Engineering) \n\n
+    CCS 229 - Intelligent Systems
+    Computer Science Department
+    College of Information and Communications Technology
+    West Visayas State University"""
+    form1.text(text)
 
-        centers = generate_random_points_in_square(-4, 4, -4, 4, n_clusters)
-        X, y = make_blobs(n_samples=n_samples, n_features=2,
-                    cluster_std=cluster_std, centers = centers,
-                    random_state=random_state)       
-        
-        # Split the dataset into training and testing sets
-        X_train, X_test, y_train, y_test = train_test_split(X, y, \
-            test_size=0.2, random_state=42)
-        
-        st.subheader('Linear Kernel')
-        clf = svm.SVC(kernel='linear', C=1000)
-        y_test_pred = classify(clf, X_train, X_test, y_train, y_test)
-        visualize_classifier(clf, X_test, y_test_pred)
+    form1.header('Description')
+    form1.subheader('Support Vector Machines (SVM):')
+    text = """Supervised learning algorithm: Used for both classification and regression.
+        Linear decision boundary: In high-dimensional spaces, it uses the 
+        kernel trick to create a non-linear decision boundary by implicitly 
+        mapping data points to higher dimensions.
+        Maximizing margin: Aims to find the hyperplane that separates classes 
+        with the largest margin (distance between the hyperplane and the closest data 
+        points on either side). This makes it robust to noise and outliers.
+    """
+    form1.write(text)
+    form1.subheader('Linear Kernel')
 
-        st.subheader('Polynomial Kernel')
-        clf = svm.SVC(kernel='poly', degree=3, C=1000)
-        y_test_pred = classify(clf, X_train, X_test, y_train, y_test)
-        visualize_classifier(clf, X_test, y_test_pred)
+    text = """Formula: K(x_i, x_j) = x_i^T * x_j (essentially the dot product)
+        \nWhen to use: Best suited for linearly separable data. Also a 
+        good starting point when you're unsure which kernel to choose, 
+        as it's generally fast and simple."""
+    form1.write(text)
+    form1.subheader('Polynomial Kernel')
+    text = """Formula: K(x_i, x_j) = (x_i^T * x_j + 1)^d (where 'd' is the degree of the polynomial)
+        \nWhen to use: Useful for problems where the relationship between the data points
+        is not simply linear. The degree 'd' controls how flexible the decision boundary can be. """
+    form1.write(text)
 
-        st.subheader('RBF Kernel')
-        clf = svm.SVC(kernel='rbf', gamma=0.7, C=1000)
-        y_test_pred = classify(clf, X_train, X_test, y_train, y_test)
-        visualize_classifier(clf, X_test, y_test_pred)
+    form1.subheader('Radial Basis Function (RBF) Kernel')
 
-def classify(clf, X_train, X_test, y_train, y_test):
-        clf.fit(X_train,y_train)
+    text = """Formula: K(x_i, x_j) = exp(-gamma ||x_i - x_j||^2) (where 'gamma' is 
+        a parameter that influences the spread of the kernel)
+        \nWhen to use: The RBF kernel is a popular choice as it can 
+        handle complex, non-linear decision boundaries. The 'gamma' parameter 
+        allows you to control the influence of nearby data points on the decision boundary."""
+    form1.write(text)
+
+    submit1 = form1.form_submit_button("Start")
+
+    if submit1:
+        form1 = [];
+        # Go to the next form        
+        display_form2()
+
+def display_form2():
+    st.session_state["current_form"] = 2
+
+    form2 = st.form("training")
+    #this session variable provides access to form2
+    st.session_state["form2"] = form2
+    
+    df = pd.read_csv('data_decision_trees.csv', header=None)
+    X = df.iloc[:,:-1].values
+    y = df.iloc[:,-1].values   
+
+    text = """Imagine a triangle formed by the three centroids of class 0. 
+    Class 1 data points will be scattered around the center of the triangle, 
+    with some points falling inside the triangle and overlapping with 
+    class 0 data points. This creates a challenging scenario for SVMs with linear kernels,
+    as a straight line cannot perfectly separate the overlapping regions."""
+
+    form2.write(text)
+
+    form2.subheader('Browse the Dataset') 
+    form2.write(df)
+
+    form2.subheader('Dataset Description')
+    form2.write(df.describe().T)
+
+    form2.subheader('Select the kernel')
+
+    # Create the selecton of classifier
+    clf = SVC(kernel='linear')
+    st.session_state['selected_kernel'] = 0
+    options = ['Linear', 'Polynomial', 'Radial Basis Function']
+    selected_option = form2.selectbox('Select the kernel', options)
+    if selected_option =='Polynomial':
+        st.session_state['selected_kernel'] = 1
+        clf = SVC(kernel='poly', degree=3)
+    elif selected_option=='Radial Basis Function':
+        st.session_state['selected_kernel'] = 2
+        clf = SVC(kernel='rbf', gamma=10) 
+    else:
+        clf = SVC(kernel='linear')
+        st.session_state['selected_kernel'] = 0
+
+    # save the clf to the session variable
+    st.session_state['clf'] = clf
+
+    submit2 = form2.form_submit_button("Train")
+    if submit2:     
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=3)
+
+        clf = st.session_state['clf']
+        clf.fit(X_train, y_train)
         y_test_pred = clf.predict(X_test)
-        st.subheader('Confusion Matrix')
 
-        st.write('Confusion Matrix')
+        form2.subheader('Confusion Matrix')
+        form2.write('Confusion Matrix')
         cm = confusion_matrix(y_test, y_test_pred)
-        st.text(cm)
-        st.subheader('Performance Metrics')
-        st.text(classification_report(y_test, y_test_pred))
-        st.subheader('Visualization')   
-        return  y_test_pred
+        form2.text(cm)
+        form2.subheader('Performance Metrics')
+        form2.text(classification_report(y_test, y_test_pred))
 
-def visualize_classifier(classifier, X, y, title=''):
+        # save the clf to the session state
+        st.session_state['clf'] = clf
+        display_form3()
+
+        # save data to session state
+        st.session_state['X_test'] = X_test
+        st.session_state['y_test_pred'] = y_test_pred
+
+def display_form3():
+    st.session_state["current_form"] = 3
+    form3 = st.form("Visualization")
+    form3.subheader('Visualization')
+    form3.text('Click the button to generate a plot of the data.')
+
+    plotbn = form3.form_submit_button("Plot")
+    if plotbn:                    
+
+        clf = st.session_state['clf']
+        X_test = st.session_state['X_test']
+        y_test_pred = st.session_state['y_test_pred']
+        visualize_classifier(form3, clf, X_test, y_test_pred)
+
+        if st.session_state['selected_kernel'] == 0:
+            text = """For partially overlapping clusters, the linear kernel might be
+            able to find a hyperplane (straight line in higher dimensions) that 
+            separates the majority of points, but misclassifications will 
+            likely occur due to the overlap."""
+        elif st.session_state['selected_kernel'] == 1:
+            text = """The polynomial kernel can be more effective with 
+            overlapping clusters compared to the linear kernel. By mapping the 
+            data to a higher-dimensional space, it can potentially find non-linear 
+            decision boundaries that better separate the classes even if 
+            they overlap in the original feature space."""
+        else:
+            text = """The RBF kernel is often the most robust choice for dealing 
+            with overlapping clusters. It uses a Gaussian function to measure 
+            similarity between data points, allowing for flexible and smooth decision
+            boundaries even in complex, non-linear scenarios."""
+            
+        form3.write(text)
+    submit3 = form3.form_submit_button("Reset")
+    if submit3:
+        st.session_state.reset_app = True
+        st.session_state.clear()
+
+def visualize_classifier(form, classifier, X, y, title=''):
     # Define the minimum and maximum values for X and Y
     # that will be used in the mesh grid
     min_x, max_x = X[:, 0].min() - 1.0, X[:, 0].max() + 1.0
@@ -137,28 +238,8 @@ def visualize_classifier(classifier, X, y, title=''):
     ax.set_yticks(np.arange(int(X[:, 1].min() - 1), int(X[:, 1].max() + 1), 1.0))
 
     
-    st.pyplot(fig)
+    form.pyplot(fig)
 
-def generate_random_points_in_square(x_min, x_max, y_min, y_max, num_points):
-    """
-    Generates a NumPy array of random points within a specified square region.
 
-    Args:
-        x_min (float): Minimum x-coordinate of the square.
-        x_max (float): Maximum x-coordinate of the square.
-        y_min (float): Minimum y-coordinate of the square.
-        y_max (float): Maximum y-coordinate of the square.
-        num_points (int): Number of points to generate.
-
-    Returns:
-        numpy.ndarray: A 2D NumPy array of shape (num_points, 2) containing the generated points.
-    """
-
-    # Generate random points within the defined square region
-    points = np.random.uniform(low=[x_min, y_min], high=[x_max, y_max], size=(num_points, 2))
-
-    return points
-
-# Run the app
 if __name__ == "__main__":
     app()
