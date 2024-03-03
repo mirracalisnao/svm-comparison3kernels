@@ -1,113 +1,102 @@
-import streamlit as st
+# Input the relevant libraries
 import numpy as np
 import pandas as pd
+import streamlit as st
 import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn import svm
-from sklearn.model_selection import train_test_split
+from sklearn.datasets import make_blobs
 from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.model_selection import train_test_split
 
 # Define the Streamlit app
 def app():
-    if "reset_app" not in st.session_state:
-        st.session_state.reset_app = False
 
-    st.title('Comparison of SVM Kernels')
+    st.title('Support Vector Machine with Different Kernels')
+    st.subheader('by Louie F. Cervantes M.Eng., WVSU College of ICT')
+ 
+    st.write('Linear Kernel:')
+    text = """Strengths: \nHandles high dimensions, maximizes separation, 
+    efficient memory use, and offers some non-linearity through kernels."""
+    st.write(text)
+    text = """Weaknesses: \nComputationally demanding, can be difficult to interpret, 
+    and requires careful parameter tuning."""
+    st.write(text)
 
-    # Use session state to track the current form
-    if "current_form" not in st.session_state:
-        st.session_state["current_form"] = 1    
+    st.write('Polynomial Kernel')
+    text = """Strengths: \nCan capture complex relationships between features and classes, 
+    even when they are non-linear."""
+    st.write(text)
 
-    # Display the appropriate form based on the current form state
-    if st.session_state["current_form"] == 1:
-        display_form1()
-    elif st.session_state["current_form"] == 2:
-        display_form2()
-    elif st.session_state["current_form"] == 3:
-        display_form3()
+    text = """Weaknesses:\nCan overfit the training data when dealing with high dimensionality 
+    or small datasets."""
+    st.write(text)
 
-    if "form2" not in st.session_state: 
-        st.session_state["form2"] = []
+    st.write('RBF Kernel')
+    st.write("""Strong in complex, high-dimensional spaces, but computationally expensive.""")
+    
+    # Create a slider with a label and initial value
+    n_samples = st.slider(
+        label="Number of samples (200 to 4000):",
+        min_value=200,
+        max_value=4000,
+        step=200,
+        value=1000,  # Initial value
+    )
 
-def display_form1():
-    st.session_state["current_form"] = 1
-    form1 = st.form("intro")
-    form1.subheader('About the Support Vector Machine - Kernel Functions')
-    form1.write("""
-        (c) Cherry Mirra Calisnao  BSCS 3A
-        College of Information and Communications Technology
-        West Visayas state University
-    """)
-                
-    form1.write('Replace with the actual description')        
-    #insert the rest of the information here
+    cluster_std = st.number_input("Standard deviation (between 0 and 1):")
 
-    submit1 = form1.form_submit_button("Start")
-
-    if submit1:
-        form1 = []
-        # Go to the next form        
-        display_form2()
-
-def display_form2():
-    st.session_state["current_form"] = 2
-    form2 = st.form("training")
-    form2.subheader('Dataset') 
-    st.session_state["form2"] = form2    
-
-    df = pd.read_csv('data_decision_trees.csv', header=None)
-    X = df.iloc[:,:-1].values
-    y = df.iloc[:,-1].values   
-
-    form2.write(df)
-    form2.write(df.describe().T)
-
-    # insert the rest of the code to train the classifier here        
-    form2.write('Display the training result')
-
-    submit2 = form2.form_submit_button("Train")
-    if submit2:     
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=3)
-
-        # Train models with different kernels
-        kernels = ['linear', 'poly', 'rbf']
-        for kernel in kernels:
-            st.subheader(f"Results for kernel: {kernel}")
-            clfSVM = svm.SVC(kernel=kernel, C=1000, gamma=1.0)  # Adjust hyperparameters as needed
-            clfSVM.fit(X_train, y_train)
-            y_test_pred = clfSVM.predict(X_test)
-
-            form2.subheader('Confusion Matrix')
-            cm = confusion_matrix(y_test, y_test_pred)
-            form2.text(cm)
-            form2.subheader('Performance Metrics')
-            form2.text(classification_report(y_test, y_test_pred))
-            form2.subheader('Visualization')
-            visualize_classifier(clfSVM, X_test, y_test_pred, title=f"SVM with Kernel: {kernel}")
-
-        display_form3()
-
-def display_form3():
-    st.session_state["current_form"] = 3
-    form3 = st.form("prediction")
-    form3.subheader('Prediction')
-    form3.text('replace with the result of the prediction model.')
-
-    n_clusters = form3.slider(
+    random_state = st.slider(
+        label="Random seed (between 0 and 100):",
+        min_value=0,
+        max_value=100,
+        value=42,  # Initial value
+    )
+   
+    n_clusters = st.slider(
         label="Number of Clusters:",
         min_value=2,
         max_value=6,
         value=2,  # Initial value
     )
 
-    predictbn = form3.form_submit_button("Predict")
-    if predictbn:                    
-        form3.text('User selected nclusters = ' + str(n_clusters))
+    if st.button('Start'):
 
-    submit3 = form3.form_submit_button("Reset")
-    if submit3:
-        st.session_state.reset_app = True
-        st.session_state.clear()
+        centers = generate_random_points_in_square(-4, 4, -4, 4, n_clusters)
+        X, y = make_blobs(n_samples=n_samples, n_features=2,
+                    cluster_std=cluster_std, centers = centers,
+                    random_state=random_state)       
+        
+        # Split the dataset into training and testing sets
+        X_train, X_test, y_train, y_test = train_test_split(X, y, \
+            test_size=0.2, random_state=42)
+        
+        st.subheader('Linear Kernel')
+        clf = svm.SVC(kernel='linear', C=1000)
+        y_test_pred = classify(clf, X_train, X_test, y_train, y_test)
+        visualize_classifier(clf, X_test, y_test_pred)
+
+        st.subheader('Polynomial Kernel')
+        clf = svm.SVC(kernel='poly', degree=3, C=1000)
+        y_test_pred = classify(clf, X_train, X_test, y_train, y_test)
+        visualize_classifier(clf, X_test, y_test_pred)
+
+        st.subheader('RBF Kernel')
+        clf = svm.SVC(kernel='rbf', gamma=0.7, C=1000)
+        y_test_pred = classify(clf, X_train, X_test, y_train, y_test)
+        visualize_classifier(clf, X_test, y_test_pred)
+
+def classify(clf, X_train, X_test, y_train, y_test):
+        clf.fit(X_train,y_train)
+        y_test_pred = clf.predict(X_test)
+        st.subheader('Confusion Matrix')
+
+        st.write('Confusion Matrix')
+        cm = confusion_matrix(y_test, y_test_pred)
+        st.text(cm)
+        st.subheader('Performance Metrics')
+        st.text(classification_report(y_test, y_test_pred))
+        st.subheader('Visualization')   
+        return  y_test_pred
 
 def visualize_classifier(classifier, X, y, title=''):
     # Define the minimum and maximum values for X and Y
@@ -147,8 +136,29 @@ def visualize_classifier(classifier, X, y, title=''):
     ax.set_xticks(np.arange(int(X[:, 0].min() - 1), int(X[:, 0].max() + 1), 1.0))
     ax.set_yticks(np.arange(int(X[:, 1].min() - 1), int(X[:, 1].max() + 1), 1.0))
 
-    st.session_state["form2"].pyplot(fig)
+    
+    st.pyplot(fig)
 
+def generate_random_points_in_square(x_min, x_max, y_min, y_max, num_points):
+    """
+    Generates a NumPy array of random points within a specified square region.
+
+    Args:
+        x_min (float): Minimum x-coordinate of the square.
+        x_max (float): Maximum x-coordinate of the square.
+        y_min (float): Minimum y-coordinate of the square.
+        y_max (float): Maximum y-coordinate of the square.
+        num_points (int): Number of points to generate.
+
+    Returns:
+        numpy.ndarray: A 2D NumPy array of shape (num_points, 2) containing the generated points.
+    """
+
+    # Generate random points within the defined square region
+    points = np.random.uniform(low=[x_min, y_min], high=[x_max, y_max], size=(num_points, 2))
+
+    return points
+
+# Run the app
 if __name__ == "__main__":
     app()
-
