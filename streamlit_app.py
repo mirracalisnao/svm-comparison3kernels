@@ -2,11 +2,10 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns; sns.set()
+import seaborn as sns
 from sklearn import svm
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix, classification_report
 
 # Define the Streamlit app
 def app():
@@ -46,7 +45,7 @@ def display_form1():
     submit1 = form1.form_submit_button("Start")
 
     if submit1:
-        form1 = [];
+        form1 = []
         # Go to the next form        
         display_form2()
 
@@ -60,37 +59,33 @@ def display_form2():
     X = df.iloc[:,:-1].values
     y = df.iloc[:,-1].values   
 
-
     form2.write(df)
     form2.write(df.describe().T)
-
 
     # insert the rest of the code to train the classifier here        
     form2.write('Display the training result')
 
-
     submit2 = form2.form_submit_button("Train")
     if submit2:     
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=3)
 
-       X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=3)
+        # Train models with different kernels
+        kernels = ['linear', 'poly', 'rbf']
+        for kernel in kernels:
+            st.subheader(f"Results for kernel: {kernel}")
+            clfSVM = svm.SVC(kernel=kernel, C=1000, gamma=1.0)  # Adjust hyperparameters as needed
+            clfSVM.fit(X_train, y_train)
+            y_test_pred = clfSVM.predict(X_test)
 
-       # Train models with different kernels
-       kernels = ['linear', 'poly', 'rbf']
-       for kernel in kernels:
-       st.subheader(f"Results for kernel: {kernel}")
-       clfSVM = svm.SVC(kernel=kernel, C=1000, gamma=1.0)  # Adjust hyperparameters as needed
-       clfSVM.fit(X_train, y_train)
-       y_test_pred = clfSVM.predict(X_test)
+            form2.subheader('Confusion Matrix')
+            cm = confusion_matrix(y_test, y_test_pred)
+            form2.text(cm)
+            form2.subheader('Performance Metrics')
+            form2.text(classification_report(y_test, y_test_pred))
+            form2.subheader('Visualization')
+            visualize_classifier(clfSVM, X_test, y_test_pred, title=f"SVM with Kernel: {kernel}")
 
-       form2.subheader('Confusion Matrix')
-       cm = confusion_matrix(y_test, y_test_pred)
-       form2.text(cm)
-       form2.subheader('Performance Metrics')
-       form2.text(classification_report(y_test, y_test_pred))
-       form2.subheader('Visualization')
-       visualize_classifier(clfSVM, X_test, y_test_pred, title=f"SVM with Kernel: {kernel}")
-
-       display_form3()
+        display_form3()
 
 def display_form3():
     st.session_state["current_form"] = 3
@@ -152,9 +147,7 @@ def visualize_classifier(classifier, X, y, title=''):
     ax.set_xticks(np.arange(int(X[:, 0].min() - 1), int(X[:, 0].max() + 1), 1.0))
     ax.set_yticks(np.arange(int(X[:, 1].min() - 1), int(X[:, 1].max() + 1), 1.0))
 
-    
     st.session_state["form2"].pyplot(fig)
-
 
 if __name__ == "__main__":
     app()
